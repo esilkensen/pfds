@@ -192,11 +192,41 @@ signature FINITEMAP =
 sig
     type Key
     type 'a Map
-    exception NotFound
 
     val empty : 'a Map
     val bind : Key * 'a * 'a Map -> 'a Map
     val lookup : Key * 'a Map -> 'a (* raise NotFound if key is not found *)
 end
+    
+functor UnbalancedFiniteMap (Element : ORDERED) : FINITEMAP =
+struct
+type Key = Element.T
+datatype 'a Tree = E | T of 'a Tree * Key * 'a * 'a Tree
+type 'a Map = 'a Tree
+exception NotFound
+              
+val empty = E
 
-    (* TODO *)
+fun lookup (x, E) = raise NotFound
+  | lookup (x, s as T (a, y, v, b)) =
+    if Element.lt (x, y) then lookup (x, a)
+    else if Element.lt (y, x) then lookup (x, b)
+    else v
+
+fun bind (x, v, E) = T (E, x, v, E)
+  | bind (x, v, s as T (a, y, u, b)) =
+    if Element.lt (x, y) then T (bind (x, v, a), y, u, b)
+    else if Element.lt (y, x) then T (a, y, u, bind (x, v, b))
+    else T (a, y, v, b)
+end
+
+structure OrderedString : ORDERED =
+struct
+type T = string
+             
+fun eq (x, y) = String.compare (x, y) = General.EQUAL
+fun lt (x, y) = String.compare (x, y) = General.LESS
+fun leq (x, y) = String.compare (y, x) = General.GREATER
+end
+
+structure Dictionary = UnbalancedFiniteMap(OrderedString)
