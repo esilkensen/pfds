@@ -183,7 +183,7 @@ fun printTree t =
   in
       printTree2 (t, 0)
   end
-        
+      
 (* Exercise 2.6
  * Adapt the UnbalancedSet functor to support finite maps rather than sets.
  *)
